@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CQ Tides — Admin</title>
+  <link rel="stylesheet" href="vendor/inter.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:     #040c18; --bg2: #071526; --bg3: #0b1d34;
+      --card:   #0e2040; --border: #1a3a5c;
+      --accent: #0ea5e9; --cyan: #06b6d4; --green: #22c55e;
+      --yellow: #f59e0b; --red: #ef4444;
+      --text:   #e2eef8; --text2: #7da8cc; --text3: #4a7096;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; }
+
+    /* ── Login ── */
+    #loginScreen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 40px 36px; width: 100%; max-width: 420px; text-align: center;
+    }
+    .login-card h1 { font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+    .login-card p  { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+    .login-card input {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 11px 14px; font-size: 14px; font-family: monospace; margin-bottom: 14px;
+    }
+    .login-card input:focus { outline: none; border-color: var(--accent); }
+    .btn-primary {
+      width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .login-note { margin-top: 16px; font-size: 12px; color: var(--text3); }
+
+    /* ── Dashboard ── */
+    #adminDash { display: none; min-height: 100vh; }
+    .admin-header {
+      background: rgba(4,12,24,.92); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50;
+    }
+    .admin-header-inner {
+      max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-header h1 { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 20px;
+      padding: 4px 12px; font-size: 12px; color: var(--text2);
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); }
+    .status-dot.ok  { background: var(--green); }
+    .status-dot.err { background: var(--red); }
+    .btn-logout {
+      background: transparent; border: 1px solid var(--border); color: var(--text2);
+      border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 12px; transition: border-color .2s;
+    }
+    .btn-logout:hover { border-color: var(--accent); color: var(--text); }
+
+    .admin-body { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 6px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text2); cursor: pointer;
+      padding: 10px 20px; font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: color .2s, border-color .2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section cards ── */
+    .section-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 24px; margin-bottom: 20px;
+    }
+    .section-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .section-card p  { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+    .json-editor {
+      width: 100%; min-height: 320px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: #7dd3fc; font-family: 'Courier New', monospace; font-size: 12px;
+      line-height: 1.6; padding: 14px; resize: vertical; transition: border-color .2s;
+    }
+    .json-editor:focus { outline: none; border-color: var(--accent); }
+    .editor-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+    .btn-save {
+      background: var(--green); color: #fff; border: none; border-radius: 8px;
+      padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .2s;
+    }
+    .btn-save:hover { opacity: .85; }
+    .btn-load {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text2);
+      border-radius: 8px; padding: 9px 20px; font-size: 13px; cursor: pointer; transition: border-color .2s;
+    }
+    .btn-load:hover { border-color: var(--accent); color: var(--text); }
+    .btn-seed {
+      background: var(--bg2); border: 1px solid var(--yellow); color: var(--yellow);
+      border-radius: 8px; padding: 9px 20px; font-size: 13px; cursor: pointer; transition: opacity .2s;
+    }
+    .btn-seed:hover { opacity: .8; }
+    .save-status { font-size: 12px; color: var(--text3); }
+    .save-status.ok  { color: var(--green); }
+    .save-status.err { color: var(--red); }
+
+    /* ── Overview cards ── */
+    .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; margin-bottom: 28px; }
+    .ov-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .ov-card .ov-val { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .ov-card .ov-lbl { font-size: 12px; color: var(--text3); margin-top: 4px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Gate ──────────────────────────────────────────── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div style="font-size:36px;margin-bottom:12px">⚙️</div>
+    <h1>CQ Tides Admin</h1>
+    <p>Enter your Supabase <strong>service_role</strong> key and project URL to continue.<br>
+       These are stored in sessionStorage only — cleared when you close the tab.</p>
+    <input type="url"      id="loginUrl"  placeholder="https://your-ref.supabase.co" />
+    <input type="password" id="loginKey"  placeholder="service_role key" />
+    <button class="btn-primary" onclick="doLogin()">Sign In →</button>
+    <p class="login-note">
+      Find both in your Supabase project →<br>
+      <strong>Project Settings → API</strong>
+    </p>
+    <p id="loginErr" class="login-note" style="color:#ef4444;margin-top:10px"></p>
+  </div>
+</div>
+
+<!-- ── Dashboard ──────────────────────────────────────────── -->
+<div id="adminDash">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <h1>🎣 CQ Tides Admin</h1>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="status-pill">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusTxt">Connecting…</span>
+        </span>
+        <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-body">
+
+    <!-- Overview -->
+    <div class="overview">
+      <div class="ov-card"><div class="ov-val" id="ovSpots">—</div><div class="ov-lbl">Fishing Spots</div></div>
+      <div class="ov-card"><div class="ov-val" id="ovBait">—</div><div class="ov-lbl">Bait/Lure Locations</div></div>
+      <div class="ov-card"><div class="ov-val" id="ovRetail">—</div><div class="ov-lbl">Retailers</div></div>
+      <div class="ov-card"><div class="ov-val" id="ovUpdated">—</div><div class="ov-lbl">Last Updated</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('spots',this)">📍 Spots</button>
+      <button class="tab-btn" onclick="switchTab('bait',this)">🎣 Bait &amp; Lures</button>
+      <button class="tab-btn" onclick="switchTab('retailers',this)">🛒 Retailers</button>
+    </div>
+
+    <!-- Spots -->
+    <div id="tab-spots" class="tab-panel active">
+      <div class="section-card">
+        <h2>Fishing Spots</h2>
+        <p>Array of spot objects. Each has: <code>name, type, species[], tip, stars (1–5)</code>.</p>
+        <textarea class="json-editor" id="editor-spots" spellcheck="false"></textarea>
+        <div class="editor-actions">
+          <button class="btn-save" onclick="saveSection('spots')">💾 Save to Supabase</button>
+          <button class="btn-load" onclick="loadSection('spots')">🔄 Reload</button>
+          <button class="btn-seed" onclick="seedSection('spots')">⚡ Seed Defaults</button>
+          <span class="save-status" id="status-spots"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bait & Lures -->
+    <div id="tab-bait" class="tab-panel">
+      <div class="section-card">
+        <h2>Bait &amp; Lure Recommendations</h2>
+        <p>Object keyed by location (e.g. <code>rosslyn_bay</code>). Each location has <code>bait[], lures[], rigs[], seasonalTip</code>.</p>
+        <textarea class="json-editor" id="editor-bait_lures" spellcheck="false" style="min-height:480px"></textarea>
+        <div class="editor-actions">
+          <button class="btn-save" onclick="saveSection('bait_lures')">💾 Save to Supabase</button>
+          <button class="btn-load" onclick="loadSection('bait_lures')">🔄 Reload</button>
+          <span class="save-status" id="status-bait_lures"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retailers -->
+    <div id="tab-retailers" class="tab-panel">
+      <div class="section-card">
+        <h2>Retailers</h2>
+        <p>Object with <code>local[]</code> and <code>online[]</code> arrays. Fields: <code>logo, name, addr, phone, url, mapsUrl, note, specialties[], recommended</code>.</p>
+        <textarea class="json-editor" id="editor-retailers" spellcheck="false"></textarea>
+        <div class="editor-actions">
+          <button class="btn-save" onclick="saveSection('retailers')">💾 Save to Supabase</button>
+          <button class="btn-load" onclick="loadSection('retailers')">🔄 Reload</button>
+          <button class="btn-seed" onclick="seedSection('retailers')">⚡ Seed Defaults</button>
+          <span class="save-status" id="status-retailers"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+/* ── Auth ─────────────────────────────────────────────────── */
+let SB_URL = '', SB_KEY = '';
+
+function doLogin() {
+  const url = document.getElementById('loginUrl').value.trim().replace(/\/$/, '');
+  const key = document.getElementById('loginKey').value.trim();
+  if (!url || !key) { document.getElementById('loginErr').textContent = 'Both fields are required.'; return; }
+  SB_URL = url; SB_KEY = key;
+  sessionStorage.setItem('sb_url', SB_URL);
+  sessionStorage.setItem('sb_key', SB_KEY);
+  showDash();
+}
+
+function doLogout() {
+  sessionStorage.clear(); SB_URL = ''; SB_KEY = '';
+  document.getElementById('adminDash').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showDash() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminDash').style.display = 'block';
+  testConnection();
+  loadAll();
+}
+
+/* ── Supabase REST helpers ────────────────────────────────── */
+async function sbFetch(path, opts = {}) {
+  const url = SB_URL || sessionStorage.getItem('sb_url');
+  const key = SB_KEY || sessionStorage.getItem('sb_key');
+  const res = await fetch(`${url}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=minimal',
+      ...(opts.headers || {}),
+    },
+  });
+  return res;
+}
+
+async function testConnection() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusTxt');
+  try {
+    const res = await sbFetch('app_config?select=key&limit=1');
+    if (res.ok) {
+      dot.className = 'status-dot ok'; txt.textContent = 'Connected';
+    } else {
+      throw new Error(res.status);
+    }
+  } catch (e) {
+    dot.className = 'status-dot err';
+    txt.textContent = `Error — check table exists (see SETUP.md)`;
+  }
+}
+
+/* ── Load / Save ─────────────────────────────────────────── */
+async function loadAll() {
+  await Promise.all(['spots', 'bait_lures', 'retailers'].map(loadSection));
+}
+
+async function loadSection(key) {
+  const el = document.getElementById(`editor-${key}`);
+  const st = document.getElementById(`status-${key}`);
+  if (!el) return;
+  try {
+    const res = await sbFetch(`app_config?key=eq.${key}&select=value`);
+    if (!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    if (rows.length) {
+      el.value = JSON.stringify(rows[0].value, null, 2);
+      updateOverview(key, rows[0].value);
+    } else {
+      el.value = key === 'spots' ? '[]' : '{}';
+    }
+    if (st) { st.textContent = ''; }
+  } catch (e) {
+    if (st) { st.className = 'save-status err'; st.textContent = `Load failed: ${e.message}`; }
+  }
+}
+
+async function saveSection(key) {
+  const el = document.getElementById(`editor-${key}`);
+  const st = document.getElementById(`status-${key}`);
+  let parsed;
+  try {
+    parsed = JSON.parse(el.value);
+  } catch (e) {
+    st.className = 'save-status err'; st.textContent = 'Invalid JSON — fix errors first.'; return;
+  }
+  st.className = 'save-status'; st.textContent = 'Saving…';
+  try {
+    const res = await sbFetch('app_config', {
+      method: 'POST',
+      body: JSON.stringify({ key, value: parsed, updated_at: new Date().toISOString() }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    st.className = 'save-status ok'; st.textContent = '✓ Saved';
+    updateOverview(key, parsed);
+    document.getElementById('ovUpdated').textContent = new Date().toLocaleTimeString('en-AU');
+    setTimeout(() => { st.textContent = ''; }, 3000);
+  } catch (e) {
+    st.className = 'save-status err'; st.textContent = `Save failed: ${e.message}`;
+  }
+}
+
+/* ── Seed defaults ───────────────────────────────────────── */
+const DEFAULTS = {
+  spots: [
+    { name: 'Rosslyn Bay Harbour',       type: 'Boat Ramp / Offshore Base', species: ['Coral Trout','Snapper','Cobia'],              tip: 'Main launching point for reef trips',            stars: 5 },
+    { name: 'Fitzroy River (Rocky)',      type: 'River — Estuarine',         species: ['Barramundi','Mangrove Jack','Bream'],          tip: 'Best barra on run-out tide at night',            stars: 5 },
+    { name: 'Great Keppel Island',        type: 'Offshore Reef',             species: ['Red Emperor','Coral Trout','Mackerel'],       tip: 'Full-day trip, multiple reef spots',             stars: 5 },
+    { name: 'Waterpark Creek (Byfield)',  type: 'Creek / Estuary',           species: ['Barramundi','Mangrove Jack','Mud Crab'],       tip: 'Remote creek — 4WD access recommended',         stars: 4 },
+    { name: 'Emu Park Jetty',             type: 'Shore / Jetty',             species: ['Bream','Whiting','Trevally'],                  tip: 'Great for kids, lights attract bait at night',  stars: 4 },
+    { name: 'Causeway Lake',              type: 'Lake / Estuary',            species: ['Flathead','Bream','Whiting'],                  tip: 'Sheltered; good on windy days',                 stars: 4 },
+    { name: 'Yeppoon Beach Gutters',      type: 'Beach',                     species: ['Whiting','Dart','Flathead'],                   tip: 'Fish the gutters on incoming tide',             stars: 3 },
+    { name: 'Cawarral Creek',             type: 'Creek',                     species: ['Barramundi','Mangrove Jack','Flathead'],       tip: 'Low-pressure spot away from crowds',            stars: 3 },
+  ],
+  retailers: {
+    local: [
+      { logo:'🎣', name:'BCF Rockhampton',       addr:'24 Musgrave St, North Rockhampton QLD 4701', phone:'(07) 4927 3800', url:'https://www.bcf.com.au/store-finder/rockhampton', mapsUrl:'https://maps.app.goo.gl/placeholder', note:'Full range of tackle, rods, reels and bait. Click & collect available.', specialties:['Rods & Reels','Bait & Lures','Camping'], recommended:true },
+      { logo:'⚓', name:'Kmart Rockhampton',      addr:'Stockland Rockhampton, Bruce Hwy, Rockhampton', phone:'', url:'https://www.kmart.com.au', mapsUrl:'', note:'Budget-friendly basic fishing gear and tackle boxes.', specialties:['Budget Tackle','Rods'], recommended:false },
+    ],
+    online: [
+      { logo:'🌊', name:'Tackle World Online',   addr:'Australia-wide delivery', phone:'', url:'https://tackleworld.com.au', mapsUrl:'', note:'Huge range of lures, jigs, and specialist gear. Free shipping over $99.', specialties:['Lures','Jigs','Specialist Gear'], recommended:true },
+      { logo:'🎯', name:'BCF Online',            addr:'Australia-wide delivery', phone:'', url:'https://www.bcf.com.au',     mapsUrl:'', note:'Same range as the store. Great click & collect deals.', specialties:['Full Range','Click & Collect'], recommended:true },
+    ],
+  },
+};
+
+async function seedSection(key) {
+  const el = document.getElementById(`editor-${key}`);
+  if (!DEFAULTS[key]) { alert(`No built-in defaults for "${key}". Load from Supabase or type manually.`); return; }
+  if (!confirm(`Replace the editor content with built-in defaults for "${key}"? This won't save until you click Save.`)) return;
+  el.value = JSON.stringify(DEFAULTS[key], null, 2);
+  const st = document.getElementById(`status-${key}`);
+  if (st) { st.className = 'save-status ok'; st.textContent = 'Defaults loaded — click Save to persist.'; }
+}
+
+/* ── Overview ────────────────────────────────────────────── */
+function updateOverview(key, value) {
+  if (key === 'spots')     { document.getElementById('ovSpots').textContent  = Array.isArray(value) ? value.length : '?'; }
+  if (key === 'bait_lures'){ document.getElementById('ovBait').textContent   = typeof value === 'object' ? Object.keys(value).length : '?'; }
+  if (key === 'retailers') {
+    const local  = value?.local?.length  || 0;
+    const online = value?.online?.length || 0;
+    document.getElementById('ovRetail').textContent = local + online;
+  }
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${name === 'bait' ? 'bait' : name}`).classList.add('active');
+  btn.classList.add('active');
+  const panelMap = { spots:'tab-spots', bait:'tab-bait', retailers:'tab-retailers' };
+  document.getElementById(panelMap[name]).classList.add('active');
+}
+
+/* ── Auto-restore session ────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  const url = sessionStorage.getItem('sb_url');
+  const key = sessionStorage.getItem('sb_key');
+  if (url && key) { SB_URL = url; SB_KEY = key; showDash(); }
+  // Pre-fill URL from config.js if available
+  if (window.APP_CONFIG?.supabase_url) {
+    document.getElementById('loginUrl').value = APP_CONFIG.supabase_url;
+  }
+});
+</script>
+</body>
+</html>
