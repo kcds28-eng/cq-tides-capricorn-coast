@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>VIP Payment — Automated Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 32px; }
+    h1  { font-size: 20px; font-weight: 800; margin-bottom: 6px; color: #f8fafc; }
+    .sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+    .suite { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .suite-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+    .test { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid #1e293b; }
+    .test:last-child { border-bottom: none; }
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; min-width: 52px; text-align: center; }
+    .pass  { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+    .fail  { background: rgba(239,68,68,.15);  color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+    .test-name { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+    .test-detail { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .summary { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+    .summary-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 20px; text-align: center; }
+    .summary-num  { font-size: 28px; font-weight: 900; }
+    .summary-lbl  { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .green { color: #4ade80; }
+    .red   { color: #f87171; }
+
+    /* Live demo form */
+    .demo-section { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .demo-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .field label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+    .field input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: inherit; outline: none; transition: border-color .2s; }
+    .field input:focus { border-color: #0ea5e9; }
+    .btn { background: linear-gradient(135deg,#f59e0b,#fbbf24); color: #0f172a; font-weight: 800; border: none; border-radius: 9px; padding: 12px 22px; font-size: 14px; cursor: pointer; font-family: inherit; width: 100%; transition: opacity .2s; }
+    .btn:hover { opacity: .9; }
+    .btn-cancel { background: #334155; color: #e2e8f0; font-weight: 600; border: none; border-radius: 9px; padding: 12px 22px; font-size: 13px; cursor: pointer; font-family: inherit; width: 100%; margin-top: 8px; }
+    .result-box { display: none; margin-top: 14px; background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.3); border-radius: 10px; padding: 16px; text-align: center; }
+    .result-icon { font-size: 36px; margin-bottom: 6px; }
+    .result-title { font-size: 16px; font-weight: 800; color: #4ade80; }
+    .result-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .ls-output { margin-top: 8px; font-size: 11px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; color: #7dd3fc; font-family: monospace; text-align: left; }
+    .secure { font-size: 11px; color: #475569; text-align: center; margin-top: 8px; }
+    .err-box { display: none; margin-top: 10px; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.3); border-radius: 8px; padding: 12px; color: #f87171; font-size: 12px; font-weight: 600; }
+    .link { display: inline-block; margin-top: 18px; font-size: 12px; color: #0ea5e9; text-decoration: none; }
+    .link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<h1>⭐ VIP Payment — Automated Test Suite</h1>
+<p class="sub">Tests run automatically on page load · Dummy account pre-filled for live demo</p>
+
+<!-- AUTO TEST RESULTS -->
+<div class="suite">
+  <div class="suite-title">Validation Tests</div>
+  <div id="testResults"></div>
+  <div class="summary" id="summary"></div>
+</div>
+
+<!-- LIVE DEMO FORM -->
+<div class="demo-section">
+  <div class="demo-title">Live Demo — Dummy Account</div>
+
+  <div class="form-row">
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="demoName" value="Test Fisher QLD" />
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="demoEmail" value="testfisher@cqtides.com.au" />
+    </div>
+  </div>
+  <div class="field">
+    <label>Card Number</label>
+    <input type="text" id="demoCard" value="4242 4242 4242 4242" maxlength="19" oninput="fmtCard(this)" />
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label>Expiry</label>
+      <input type="text" id="demoExpiry" value="12 / 28" maxlength="7" />
+    </div>
+    <div class="field">
+      <label>CVV</label>
+      <input type="text" id="demoCVV" value="123" maxlength="3" />
+    </div>
+  </div>
+
+  <button class="btn" onclick="demoSubscribe()">Subscribe — $8.00 / month</button>
+  <button class="btn-cancel" onclick="demoCancel()">Cancel Subscription (if active)</button>
+  <p class="secure">🔒 Mock payment — no real charge · localStorage only</p>
+
+  <div class="err-box" id="demoErr"></div>
+  <div class="result-box" id="demoResult">
+    <div class="result-icon">⭐</div>
+    <div class="result-title">VIP Subscription Active!</div>
+    <div class="result-sub">Dummy account subscribed successfully. Ads would be hidden in the main app.</div>
+    <div class="ls-output" id="lsOutput"></div>
+  </div>
+</div>
+
+<a class="link" href="http://localhost:8082" target="_blank">← Open Main App to verify ads are hidden →</a>
+
+<script>
+  // ── Validation logic (mirrors subscribeVIP in app.js) ─────────
+  const VIP_LS_KEY = 'cqtides_vip';
+
+  function validate(name, email, card, expiry, cvv) {
+    if (!name || !email)     return { ok: false, msg: 'Missing name or email' };
+    if (card.length < 12)    return { ok: false, msg: 'Card number too short (< 12 digits)' };
+    if (!expiry || !cvv)     return { ok: false, msg: 'Missing expiry or CVV' };
+    return { ok: true, msg: 'All fields valid — subscription accepted' };
+  }
+
+  function subscribe(name, email, card, expiry, cvv) {
+    const r = validate(name, email, card, expiry, cvv);
+    if (!r.ok) return r;
+    localStorage.setItem(VIP_LS_KEY, 'true');
+    localStorage.setItem('cqtides_vip_email', email);
+    return { ok: true, msg: 'Subscribed & persisted to localStorage' };
+  }
+
+  function cancelSubscription() {
+    localStorage.removeItem(VIP_LS_KEY);
+    localStorage.removeItem('cqtides_vip_email');
+  }
+
+  function fmtCard(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,16);
+    input.value = v.replace(/(.{4})/g,'$1 ').trim();
+  }
+
+  // ── Auto test runner ──────────────────────────────────────────
+  const TESTS = [
+    {
+      name: 'Rejects empty name',
+      detail: 'name="", email="test@x.com", card="4242424242424242", expiry="12/28", cvv="123"',
+      fn: () => !validate('', 'test@x.com', '4242424242424242', '12/28', '123').ok,
+    },
+    {
+      name: 'Rejects empty email',
+      detail: 'name="Test", email="", card="4242424242424242", expiry="12/28", cvv="123"',
+      fn: () => !validate('Test', '', '4242424242424242', '12/28', '123').ok,
+    },
+    {
+      name: 'Rejects short card (< 12 digits)',
+      detail: 'card="4242" (4 digits)',
+      fn: () => !validate('Test', 'test@x.com', '4242', '12/28', '123').ok,
+    },
+    {
+      name: 'Rejects missing expiry',
+      detail: 'expiry="" with valid everything else',
+      fn: () => !validate('Test', 'test@x.com', '4242424242424242', '', '123').ok,
+    },
+    {
+      name: 'Rejects missing CVV',
+      detail: 'cvv="" with valid everything else',
+      fn: () => !validate('Test', 'test@x.com', '4242424242424242', '12/28', '').ok,
+    },
+    {
+      name: 'Accepts valid dummy account',
+      detail: 'name="Test Fisher", email="test@cqtides.com.au", card="4242424242424242", expiry="12/28", cvv="123"',
+      fn: () => validate('Test Fisher', 'test@cqtides.com.au', '4242424242424242', '12/28', '123').ok,
+    },
+    {
+      name: 'Accepts 12-digit card (minimum)',
+      detail: 'card="424242424242" (12 digits)',
+      fn: () => validate('Test', 'test@x.com', '424242424242', '12/28', '123').ok,
+    },
+    {
+      name: 'subscribe() writes to localStorage',
+      detail: 'localStorage.getItem("cqtides_vip") === "true" after subscribe()',
+      fn: () => {
+        cancelSubscription();
+        subscribe('Test', 'test@x.com', '4242424242424242', '12/28', '123');
+        const ok = localStorage.getItem(VIP_LS_KEY) === 'true';
+        cancelSubscription();
+        return ok;
+      },
+    },
+    {
+      name: 'cancelSubscription() clears localStorage',
+      detail: 'localStorage.getItem("cqtides_vip") === null after cancel',
+      fn: () => {
+        subscribe('Test', 'test@x.com', '4242424242424242', '12/28', '123');
+        cancelSubscription();
+        return localStorage.getItem(VIP_LS_KEY) === null;
+      },
+    },
+    {
+      name: 'subscribe() persists email to localStorage',
+      detail: 'localStorage.getItem("cqtides_vip_email") === "test@cqtides.com.au"',
+      fn: () => {
+        cancelSubscription();
+        subscribe('Test', 'test@cqtides.com.au', '4242424242424242', '12/28', '123');
+        const ok = localStorage.getItem('cqtides_vip_email') === 'test@cqtides.com.au';
+        cancelSubscription();
+        return ok;
+      },
+    },
+  ];
+
+  let passed = 0, failed = 0;
+  const container = document.getElementById('testResults');
+  TESTS.forEach(t => {
+    let ok;
+    try { ok = t.fn(); } catch(e) { ok = false; }
+    if (ok) passed++; else failed++;
+    const row = document.createElement('div');
+    row.className = 'test';
+    row.innerHTML = `
+      <span class="badge ${ok ? 'pass' : 'fail'}">${ok ? 'PASS' : 'FAIL'}</span>
+      <div>
+        <div class="test-name">${t.name}</div>
+        <div class="test-detail">${t.detail}</div>
+      </div>`;
+    container.appendChild(row);
+  });
+
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-box"><div class="summary-num green">${passed}</div><div class="summary-lbl">Passed</div></div>
+    <div class="summary-box"><div class="summary-num ${failed > 0 ? 'red' : 'green'}">${failed}</div><div class="summary-lbl">Failed</div></div>
+    <div class="summary-box"><div class="summary-num">${TESTS.length}</div><div class="summary-lbl">Total</div></div>
+    <div class="summary-box"><div class="summary-num ${failed === 0 ? 'green' : 'red'}">${failed === 0 ? '100%' : Math.round(passed/TESTS.length*100)+'%'}</div><div class="summary-lbl">Pass Rate</div></div>`;
+
+  // ── Live demo handlers ────────────────────────────────────────
+  function demoSubscribe() {
+    const name   = document.getElementById('demoName').value.trim();
+    const email  = document.getElementById('demoEmail').value.trim();
+    const card   = document.getElementById('demoCard').value.replace(/\s/g,'');
+    const expiry = document.getElementById('demoExpiry').value.trim();
+    const cvv    = document.getElementById('demoCVV').value.trim();
+    const r      = validate(name, email, card, expiry, cvv);
+    const errEl  = document.getElementById('demoErr');
+    const resEl  = document.getElementById('demoResult');
+    errEl.style.display = 'none';
+    resEl.style.display = 'none';
+    if (!r.ok) {
+      errEl.textContent = '✕ ' + r.msg;
+      errEl.style.display = 'block';
+      return;
+    }
+    subscribe(name, email, card, expiry, cvv);
+    document.getElementById('lsOutput').innerHTML =
+      `localStorage["cqtides_vip"]       = "${localStorage.getItem('cqtides_vip')}"<br>` +
+      `localStorage["cqtides_vip_email"] = "${localStorage.getItem('cqtides_vip_email')}"`;
+    resEl.style.display = 'block';
+  }
+
+  function demoCancel() {
+    cancelSubscription();
+    document.getElementById('demoResult').style.display = 'none';
+    document.getElementById('demoErr').style.display = 'none';
+    alert('Subscription cancelled. localStorage cleared.');
+  }
+</script>
+</body>
+</html>
