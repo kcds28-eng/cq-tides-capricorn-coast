@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CQ Tides – Rockhampton &amp; Capricorn Coast Fishing</title>
+  <meta name="description" content="Live tide levels, wind speeds, bite reports and weather radar for Rockhampton and the Capricorn Coast, Queensland." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="vendor/inter.css" />
+  <script src="vendor/chart.min.js"></script>
+</head>
+<body>
+
+  <!-- OCEAN BACKGROUND CANVAS -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- WARNING BANNER -->
+  <div id="warningBanner" class="warning-banner hidden">
+    <div class="warn-inner">
+      <span class="warn-pulse"></span>
+      <span id="warningText"></span>
+      <button class="warn-close" onclick="dismissWarning()">✕</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-emblem">🦈</div>
+        <div class="logo-words">
+          <span class="logo-title">CQ Tides</span>
+          <span class="logo-sub">Rockhampton &amp; Capricorn Coast</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="location-pill">
+          <span>📍</span>
+          <select id="locationSelect" onchange="changeLocation()">
+            <option value="rosslyn_bay">Rosslyn Bay Harbour</option>
+            <option value="yeppoon">Yeppoon Beach</option>
+            <option value="emu_park">Emu Park</option>
+            <option value="keppel_bay">Keppel Bay</option>
+            <option value="great_keppel">Great Keppel Island</option>
+            <option value="rockhampton">Rockhampton River</option>
+            <option value="byfield">Byfield / Waterpark Creek</option>
+            <option value="tanby">Tanby Point</option>
+          </select>
+        </div>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          <span>LIVE</span>
+        </div>
+        <div class="update-time" id="lastUpdated">Refreshing…</div>
+        <button class="vip-btn" id="vipHeaderBtn" onclick="openVIPModal()">⭐ Go VIP</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ALERTS STRIP -->
+  <div class="alerts-strip">
+    <div class="alerts-inner" id="alertsRow"></div>
+  </div>
+
+  <!-- AD BANNER 1 (hidden for VIP) -->
+  <div class="ad-banner" id="adBanner1">
+    <div class="ad-inner">
+      <span class="ad-tag">AD</span>
+      <span class="ad-icon">🎣</span>
+      <div class="ad-text"><strong>BCF Rockhampton</strong> — Rods, reels, bait &amp; tackle — everything you need for the Capricorn Coast</div>
+      <a href="https://www.bcf.com.au" target="_blank" rel="noopener" class="ad-link">Shop Now →</a>
+      <button class="ad-remove-btn" onclick="openVIPModal()">✕ Remove Ads</button>
+    </div>
+  </div>
+
+  <main class="main">
+
+    <!-- STAT CARDS -->
+    <section class="stats-grid">
+
+      <div class="stat-card tide-card">
+        <div class="card-stripe"></div>
+        <div class="card-top">
+          <span class="card-icon">🌊</span>
+          <span class="card-badge" id="tideBadge">—</span>
+        </div>
+        <div class="card-label">Current Tide</div>
+        <div class="card-value" id="tideHeight">—</div>
+        <div class="card-sub" id="tideStatus">Loading…</div>
+        <div class="tide-bar-wrap"><div class="tide-bar-fill" id="tideFill"></div></div>
+      </div>
+
+      <div class="stat-card wind-card">
+        <div class="card-stripe"></div>
+        <div class="card-top">
+          <span class="card-icon">💨</span>
+          <span class="card-badge" id="windBadge">—</span>
+        </div>
+        <div class="card-label">Wind Speed</div>
+        <div class="card-value" id="windSpeed">—</div>
+        <div class="card-sub" id="windDir">Loading…</div>
+        <div class="compass-wrap">
+          <div class="compass-ring">
+            <span class="cn">N</span><span class="cs">S</span>
+            <span class="ce">E</span><span class="cw">W</span>
+            <div class="compass-needle" id="compassNeedle"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card wave-card">
+        <div class="card-stripe"></div>
+        <div class="card-top">
+          <span class="card-icon">🌀</span>
+          <span class="card-badge" id="waveBadge">—</span>
+        </div>
+        <div class="card-label">Swell Height</div>
+        <div class="card-value" id="waveHeight">—</div>
+        <div class="card-sub" id="wavePeriod">Loading…</div>
+      </div>
+
+      <div class="stat-card temp-card">
+        <div class="card-stripe"></div>
+        <div class="card-top">
+          <span class="card-icon">🌡️</span>
+          <span class="card-badge" id="tempBadge">—</span>
+        </div>
+        <div class="card-label">Water Temp</div>
+        <div class="card-value" id="waterTemp">—</div>
+        <div class="card-sub" id="tempSub">Capricorn Coast</div>
+      </div>
+
+      <div class="stat-card uv-card">
+        <div class="card-stripe"></div>
+        <div class="card-top">
+          <span class="card-icon">☀️</span>
+          <span class="card-badge" id="uvBadge">—</span>
+        </div>
+        <div class="card-label">UV Index</div>
+        <div class="card-value" id="uvIndex">—</div>
+        <div class="card-sub" id="uvSub">Loading…</div>
+      </div>
+
+      <div class="stat-card bite-card">
+        <div class="card-stripe"></div>
+        <div class="card-top">
+          <span class="card-icon">🎣</span>
+          <span class="card-badge" id="biteBadge">—</span>
+        </div>
+        <div class="card-label">Bite Rating</div>
+        <div class="card-value bite-val" id="biteRating">—</div>
+        <div class="card-sub" id="biteSub">Loading…</div>
+      </div>
+
+    </section>
+
+    <!-- CHARTS -->
+    <section class="charts-row">
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <h2>24-Hour Tide Forecast</h2>
+          <div class="tide-events" id="tideEvents"></div>
+        </div>
+        <div class="chart-body">
+          <canvas id="tideChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <h2>Wind Forecast (knots)</h2>
+        </div>
+        <div class="chart-body">
+          <canvas id="windChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- RADAR + FISHING -->
+    <section class="mid-row">
+
+      <!-- RADAR PANEL -->
+      <div class="panel radar-panel">
+        <div class="panel-header">
+          <h2>🛰️ Capricorn Coast Radar</h2>
+          <div class="radar-controls">
+            <span class="radar-ts" id="radarTime">Now</span>
+            <button class="btn-sm" id="radarPlayBtn" onclick="toggleRadar()">⏸ Pause</button>
+          </div>
+        </div>
+        <div class="radar-view">
+          <canvas id="radarCanvas" width="560" height="340"></canvas>
+          <div class="radar-overlay">
+            <div class="radar-rings"></div>
+            <div class="radar-sweep" id="radarSweep"></div>
+            <div class="radar-dot"></div>
+            <div class="radar-label">Rockhampton</div>
+          </div>
+          <div class="radar-legend">
+            <div class="rleg-title">mm/hr</div>
+            <div class="rleg-row"><span style="background:#60a5fa"></span>0.2</div>
+            <div class="rleg-row"><span style="background:#22c55e"></span>1</div>
+            <div class="rleg-row"><span style="background:#eab308"></span>10</div>
+            <div class="rleg-row"><span style="background:#f97316"></span>25</div>
+            <div class="rleg-row"><span style="background:#ef4444"></span>50+</div>
+          </div>
+        </div>
+        <div class="radar-timeline" id="radarTimeline"></div>
+      </div>
+
+      <!-- FISHING CONDITIONS PANEL -->
+      <div class="panel fishing-panel">
+        <div class="panel-header">
+          <h2>🎣 Fishing Conditions</h2>
+          <button class="btn-sm" onclick="openBiteModal()">+ Add Report</button>
+        </div>
+
+        <div class="score-wrap">
+          <div class="score-ring-box">
+            <svg viewBox="0 0 130 130" class="score-svg">
+              <circle cx="65" cy="65" r="52" fill="none" stroke="#112240" stroke-width="13"/>
+              <circle id="biteRingCircle" cx="65" cy="65" r="52" fill="none" stroke="#22c55e"
+                stroke-width="13" stroke-dasharray="327" stroke-dashoffset="130"
+                stroke-linecap="round" transform="rotate(-90 65 65)"/>
+            </svg>
+            <div class="score-inner">
+              <span class="score-num" id="biteRingValue">7</span>
+              <span class="score-den">/10</span>
+              <span class="score-lbl" id="scoreLabel">Good</span>
+            </div>
+          </div>
+          <div class="score-factors" id="scoreFactors"></div>
+        </div>
+
+        <div class="species-block">
+          <div class="block-title">🐟 Target Species Today</div>
+          <div class="species-chips" id="speciesChips"></div>
+        </div>
+
+        <div class="reports-block">
+          <div class="block-title">Recent Reports</div>
+          <div class="reports-list" id="biteReportsList"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- HOURLY STRIP -->
+    <section class="hourly-section">
+      <h2>Hourly Forecast — <span id="hourlyLocName">Rosslyn Bay</span></h2>
+      <div class="hourly-scroll" id="hourlyScroll"></div>
+    </section>
+
+    <!-- FISHING SPOTS -->
+    <section class="spots-section">
+      <h2>📍 Top Fishing Spots</h2>
+      <div class="spots-grid" id="spotsGrid"></div>
+    </section>
+
+    <!-- BAIT & LURES -->
+    <section class="bait-section">
+      <div class="section-hdr">
+        <h2>🪝 Bait &amp; Lures Recommendations</h2>
+        <span class="section-sub" id="baitLocLabel">Rosslyn Bay Harbour</span>
+      </div>
+      <div class="bait-tabs">
+        <button class="btab active" id="btabBait" onclick="switchBaitTab('bait',this)">🦐 Bait</button>
+        <button class="btab" id="btabLures" onclick="switchBaitTab('lures',this)">🎣 Lures</button>
+        <button class="btab" id="btabRigs" onclick="switchBaitTab('rigs',this)">⚙️ Rigs &amp; Tackle</button>
+      </div>
+      <div class="bait-grid" id="baitGrid"></div>
+      <div class="seasonal-tip" id="seasonalTip"></div>
+    </section>
+
+    <!-- AD BANNER 2 (hidden for VIP) -->
+    <div class="ad-banner" id="adBanner2">
+      <div class="ad-inner">
+        <span class="ad-tag">AD</span>
+        <span class="ad-icon">🏕️</span>
+        <div class="ad-text"><strong>Anaconda Rockhampton</strong> — Fishing, camping &amp; outdoor gear at great prices</div>
+        <a href="https://www.anacondastores.com" target="_blank" rel="noopener" class="ad-link">Browse Deals →</a>
+        <button class="ad-remove-btn" onclick="openVIPModal()">✕ Remove Ads</button>
+      </div>
+    </div>
+
+    <!-- RETAILERS -->
+    <section class="retailers-section">
+      <div class="section-hdr">
+        <h2>🏪 Tackle Retailers</h2>
+        <span class="section-sub">Local &amp; online stores for the Capricorn Coast</span>
+      </div>
+      <div class="retailer-tabs">
+        <button class="rtab active" id="rtabLocal" onclick="switchRetailerTab('local',this)">📍 Local Stores</button>
+        <button class="rtab" id="rtabOnline" onclick="switchRetailerTab('online',this)">🌐 Online Stores</button>
+      </div>
+      <div class="retailers-grid" id="retailersGrid"></div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>🦈 CQ Tides — Rockhampton &amp; Capricorn Coast, QLD 🇦🇺</span>
+      <span class="footer-note">Data refreshes every 5 min · For reference only · Always check BOM for official warnings</span>
+    </div>
+  </footer>
+
+  <!-- VIP SUBSCRIPTION MODAL -->
+  <div id="vipModal" class="modal-overlay hidden" onclick="vipBgClick(event)">
+    <div class="modal-box vip-box">
+
+      <!-- Sign-up panel -->
+      <div id="vipSignupPanel">
+        <div class="vip-modal-hero">
+          <div class="vip-crown">⭐</div>
+          <h3>CQ Tides VIP</h3>
+          <p class="vip-tagline">The best fishing app on the Capricorn Coast — ad-free.</p>
+          <div class="vip-price">$8<span>.00</span><small>/month</small></div>
+          <p class="vip-cancel">Cancel anytime · No lock-in contract</p>
+        </div>
+        <div class="vip-perks">
+          <div class="vip-perk"><span class="perk-tick">✓</span><div><strong>No Ads</strong> — ever, anywhere in the app</div></div>
+          <div class="vip-perk"><span class="perk-tick">✓</span><div><strong>Priority Bite Alerts</strong> — push notifications for prime windows</div></div>
+          <div class="vip-perk"><span class="perk-tick">✓</span><div><strong>Advanced Bait Guide</strong> — rig setups, leader weights &amp; pro tips</div></div>
+          <div class="vip-perk"><span class="perk-tick">✓</span><div><strong>Exclusive Spot Reports</strong> — community VIP-only bite reports</div></div>
+          <div class="vip-perk"><span class="perk-tick">✓</span><div><strong>7-Day Forecast</strong> — extended tide &amp; wind outlook</div></div>
+          <div class="vip-perk"><span class="perk-tick">✓</span><div><strong>VIP Badge</strong> — shown in header &amp; reports</div></div>
+        </div>
+        <div class="modal-body vip-form">
+          <div class="vip-form-title">Payment Details</div>
+          <div class="form-row-2">
+            <label class="field">Full Name
+              <input type="text" id="vipName" class="field-input" placeholder="Jane Smith" />
+            </label>
+            <label class="field">Email
+              <input type="email" id="vipEmail" class="field-input" placeholder="you@email.com" />
+            </label>
+          </div>
+          <label class="field">Card Number
+            <input type="text" id="vipCard" class="field-input" placeholder="•••• •••• •••• ••••" maxlength="19" oninput="formatCard(this)" />
+          </label>
+          <div class="form-row-2">
+            <label class="field">Expiry
+              <input type="text" id="vipExpiry" class="field-input" placeholder="MM / YY" maxlength="7" />
+            </label>
+            <label class="field">CVV
+              <input type="text" id="vipCVV" class="field-input" placeholder="•••" maxlength="3" />
+            </label>
+          </div>
+          <div class="vip-secure-note">🔒 Secure mock payment — no real charge</div>
+        </div>
+        <div class="modal-ftr">
+          <button class="btn-secondary" onclick="closeVIPModal()">Maybe Later</button>
+          <button class="btn-vip" onclick="subscribeVIP()">Subscribe — $8.00/month</button>
+        </div>
+      </div>
+
+      <!-- Active panel -->
+      <div id="vipActivePanel" class="hidden">
+        <div class="vip-active-wrap">
+          <button class="modal-x" style="position:absolute;top:16px;right:16px" onclick="closeVIPModal()">✕</button>
+          <div class="vip-active-crown">⭐</div>
+          <div class="vip-active-title">You're a VIP Member!</div>
+          <div class="vip-active-sub">Ads removed · All features unlocked</div>
+          <div class="vip-active-perks">
+            <span>✓ No Ads</span><span>✓ Priority Alerts</span>
+            <span>✓ Advanced Bait Guide</span><span>✓ VIP Reports</span>
+          </div>
+          <div class="vip-active-price">$8.00 / month</div>
+          <button class="btn-cancel-vip" onclick="cancelVIP()">Cancel Subscription</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BITE REPORT MODAL -->
+  <div id="biteModal" class="modal-overlay hidden" onclick="modalBgClick(event)">
+    <div class="modal-box">
+      <div class="modal-hdr">
+        <h3>📝 Submit Bite Report</h3>
+        <button class="modal-x" onclick="closeBiteModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">Spot / Location
+          <select id="biteLocation" class="field-input">
+            <option>Rosslyn Bay Harbour</option>
+            <option>Yeppoon Beach</option>
+            <option>Emu Park Jetty</option>
+            <option>Keppel Bay</option>
+            <option>Great Keppel Island</option>
+            <option>Fitzroy River — Rockhampton</option>
+            <option>Byfield / Waterpark Creek</option>
+            <option>Tanby Point</option>
+            <option>Causeway Lake</option>
+            <option>Cawarral Creek</option>
+            <option>Lammermoor Beach</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label class="field">Fish Species
+          <input type="text" id="biteSpecies" class="field-input" placeholder="e.g. Barramundi, Coral Trout, Snapper…" />
+        </label>
+        <label class="field">Bite Rating
+          <div class="slider-row">
+            <input type="range" id="biteScore" min="1" max="10" value="7"
+              oninput="document.getElementById('biteScoreVal').textContent=this.value" />
+            <span class="slider-val"><span id="biteScoreVal">7</span>/10</span>
+          </div>
+        </label>
+        <label class="field">Bait / Lure Used
+          <input type="text" id="biteBait" class="field-input" placeholder="e.g. Live prawns, soft plastics, poppers…" />
+        </label>
+        <label class="field">Notes
+          <textarea id="biteNotes" class="field-input" rows="3" placeholder="Conditions, tide phase, time of day…"></textarea>
+        </label>
+      </div>
+      <div class="modal-ftr">
+        <button class="btn-secondary" onclick="closeBiteModal()">Cancel</button>
+        <button class="btn-primary" onclick="submitBiteReport()">Submit Report</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
